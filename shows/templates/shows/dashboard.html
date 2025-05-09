@@ -8,48 +8,39 @@
     <div class="alert alert-danger">
         <h4 class="alert-heading">Error</h4>
         <p>{{ error }}</p>
-        <hr>
-        <p class="mb-0">
-            Please ensure you have downloaded the Netflix dataset and placed it in:
-            <code>shows/data/netflix_titles.csv</code>
-        </p>
     </div>
     {% else %}
     <!-- Statistics Cards -->
     <div class="row g-4 mb-4">
         <div class="col-md-3">
-            <div class="card bg-dark text-white h-100">
+            <div class="card bg-dark text-white">
                 <div class="card-body">
                     <h5 class="card-title">Total Content</h5>
-                    <h2 class="display-4 mb-0">{{ stats.total_content }}</h2>
-                    <small class="text-muted">Movies and TV Shows</small>
+                    <h2>{{ stats.total_content }}</h2>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-dark text-white h-100">
+            <div class="card bg-dark text-white">
                 <div class="card-body">
                     <h5 class="card-title">Movies</h5>
-                    <h2 class="display-4 mb-0">{{ stats.movies }}</h2>
-                    <small class="text-muted">Total Movies</small>
+                    <h2>{{ stats.movies }}</h2>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-dark text-white h-100">
+            <div class="card bg-dark text-white">
                 <div class="card-body">
                     <h5 class="card-title">TV Shows</h5>
-                    <h2 class="display-4 mb-0">{{ stats.tv_shows }}</h2>
-                    <small class="text-muted">Total TV Shows</small>
+                    <h2>{{ stats.tv_shows }}</h2>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-dark text-white h-100">
+            <div class="card bg-dark text-white">
                 <div class="card-body">
-                    <h5 class="card-title">Ratings</h5>
-                    <h2 class="display-4 mb-0">{{ stats.unique_ratings }}</h2>
-                    <small class="text-muted">Unique Rating Types</small>
+                    <h5 class="card-title">Rating Types</h5>
+                    <h2>{{ stats.unique_ratings }}</h2>
                 </div>
             </div>
         </div>
@@ -60,32 +51,22 @@
         <div class="col-md-6">
             <div class="card bg-dark text-white">
                 <div class="card-body">
-                    <div id="rating-chart"></div>
+                    <h5 class="card-title">Rating Distribution</h5>
+                    <img src="data:image/png;base64,{{ rating_chart }}" 
+                         class="img-fluid" alt="Rating Distribution">
                 </div>
             </div>
         </div>
         <div class="col-md-6">
             <div class="card bg-dark text-white">
                 <div class="card-body">
-                    <div id="yearly-chart"></div>
+                    <h5 class="card-title">Content Timeline</h5>
+                    <img src="data:image/png;base64,{{ yearly_chart }}" 
+                         class="img-fluid" alt="Yearly Content">
                 </div>
             </div>
         </div>
     </div>
     {% endif %}
 </div>
-
-<!-- Include Plotly.js -->
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-{% if not error %}
-<script>
-    // Get the chart configurations
-    const ratingChart = {{ rating_chart|safe }};
-    const yearlyChart = {{ yearly_chart|safe }};
-    
-    // Create the plots
-    Plotly.newPlot('rating-chart', ratingChart.data, ratingChart.layout);
-    Plotly.newPlot('yearly-chart', yearlyChart.data, yearlyChart.layout);
-</script>
-{% endif %}
 {% endblock %}

@@ -16,6 +16,11 @@ from .utils.netflix_predictor import NetflixRatingPredictor
 import plotly.express as px
 import plotly.utils
 import json
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')  # Required for non-interactive backend
+import io
+import base64
 
 # Load the model and vectorizer (you'll need to train these first)
 try:
@@ -34,7 +39,7 @@ def home_view(request):
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect('predict_show')
+        return redirect('dashboard')
     
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -43,12 +48,11 @@ def login_view(request):
         
         if user is not None:
             login(request, user)
-            next_url = request.GET.get('next', 'predict_show')
-            return redirect(next_url)
+            return redirect('dashboard')
         else:
             messages.error(request, 'Invalid username or password.')
     
-    return render(request, 'accounts/login.html')
+    return render(request, 'accounts/login.html')  # Changed template path
 
 def register_view(request):
     if request.user.is_authenticated:
@@ -64,6 +68,10 @@ def register_view(request):
         form = UserCreationForm()
     
     return render(request, 'accounts/register.html', {'form': form})
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')
 
 @login_required(login_url='login')
 def predict_show(request):
@@ -185,13 +193,9 @@ def predict_netflix_rating(request):
 @login_required
 def dashboard_view(request):
     try:
-        # Get the absolute path to the data file
         data_file = os.path.join(settings.BASE_DIR, 'shows', 'data', 'netflix_titles.csv')
-        
-        # Load the dataset
         df = pd.read_csv(data_file)
         
-        # Basic statistics
         stats = {
             'total_content': int(len(df)),
             'movies': int(len(df[df['type'] == 'Movie'])),
@@ -199,48 +203,47 @@ def dashboard_view(request):
             'unique_ratings': int(df['rating'].nunique()),
         }
         
-        # Rating distribution
+        # Rating Distribution Plot
+        plt.figure(figsize=(10, 6))
+        plt.style.use('dark_background')
         rating_counts = df['rating'].value_counts()
-        rating_data = {
-            'data': [{
-                'values': rating_counts.values.tolist(),
-                'labels': rating_counts.index.tolist(),
-                'type': 'pie',
-                'hole': 0.4,
-            }],
-            'layout': {
-                'title': 'Content Rating Distribution',
-                'template': 'plotly_dark',
-                'paper_bgcolor': 'rgba(0,0,0,0)',
-                'plot_bgcolor': 'rgba(0,0,0,0)',
-                'font': {'color': 'white'}
-            }
-        }
+        plt.pie(rating_counts.values, 
+                labels=rating_counts.index,
+                autopct='%1.1f%%',
+                colors=plt.cm.Pastel1(np.linspace(0, 1, len(rating_counts))))
+        plt.title('Content Rating Distribution')
         
-        # Yearly distribution
-        yearly_data = df.groupby('release_year').size().reset_index(name='count')
-        yearly_data = {
-            'data': [{
-                'x': yearly_data['release_year'].tolist(),
-                'y': yearly_data['count'].tolist(),
-                'type': 'scatter',
-                'mode': 'lines+markers',
-            }],
-            'layout': {
-                'title': 'Content by Release Year',
-                'template': 'plotly_dark',
-                'paper_bgcolor': 'rgba(0,0,0,0)',
-                'plot_bgcolor': 'rgba(0,0,0,0)',
-                'font': {'color': 'white'},
-                'xaxis': {'title': 'Release Year'},
-                'yaxis': {'title': 'Number of Titles'}
-            }
-        }
+        # Save rating plot to base64
+        buffer = io.BytesIO()
+        plt.savefig(buffer, format='png', bbox_inches='tight', 
+                   facecolor='#2d2d2d', edgecolor='none')
+        buffer.seek(0)
+        rating_chart = base64.b64encode(buffer.getvalue()).decode()
+        plt.close()
+        
+        # Yearly Content Plot
+        plt.figure(figsize=(10, 6))
+        yearly_data = df.groupby('release_year').size()
+        plt.plot(yearly_data.index, yearly_data.values, 
+                marker='o', color='#E50914', linewidth=2)
+        plt.grid(True, alpha=0.2)
+        plt.title('Content by Release Year')
+        plt.xlabel('Year')
+        plt.ylabel('Number of Titles')
+        plt.xticks(rotation=45)
+        
+        # Save yearly plot to base64
+        buffer = io.BytesIO()
+        plt.savefig(buffer, format='png', bbox_inches='tight',
+                   facecolor='#2d2d2d', edgecolor='none')
+        buffer.seek(0)
+        yearly_chart = base64.b64encode(buffer.getvalue()).decode()
+        plt.close()
         
         context = {
             'stats': stats,
-            'rating_chart': json.dumps(rating_data),
-            'yearly_chart': json.dumps(yearly_data),
+            'rating_chart': rating_chart,
+            'yearly_chart': yearly_chart,
             'error': None
         }
         
