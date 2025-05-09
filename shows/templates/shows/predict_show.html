@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}Predict Netflix Rating{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="text-center mb-0">Netflix Rating Predictor</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="type" class="form-label">Type</label>
+                            <select class="form-select" id="type" name="type" required>
+                                <option value="">Select Type</option>
+                                <option value="1">Movie</option>
+                                <option value="0">TV Show</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="director" class="form-label">Director</label>
+                            <input type="text" class="form-control" id="director" name="director" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="cast" class="form-label">Cast</label>
+                            <input type="text" class="form-control" id="cast" name="cast" 
+                                   placeholder="Enter main cast members (optional)">
+                            <small class="text-muted">Separate multiple cast members with commas</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="duration" class="form-label">Duration</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="duration" name="duration" required>
+                                <span class="input-group-text duration-unit">minutes/seasons</span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-danger">Predict Rating</button>
+                        </div>
+                    </form>
+
+                    {% if prediction %}
+                    <div class="mt-4">
+                        {% if prediction.status == 'success' %}
+                        <div class="alert alert-success">
+                            <h4 class="alert-heading">Prediction Result</h4>
+                            <p class="mb-0">Rating: {{ prediction.rating }}</p>
+                            <small class="text-muted">Confidence: {{ prediction.confidence }}</small>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-danger">
+                            <h4 class="alert-heading">Error</h4>
+                            <p class="mb-0">{{ prediction.message }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('type').addEventListener('change', function() {
+    const durationType = document.querySelector('.duration-unit');
+    if (this.value === '1') {
+        durationType.textContent = 'minutes';
+    } else {
+        durationType.textContent = 'seasons';
+    }
+});
+</script>
+{% endblock %}
